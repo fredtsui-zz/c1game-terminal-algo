@@ -40,21 +40,21 @@ class AlgoStrategy(gamelib.AlgoCore):
         EMP = config["unitInformation"][4]["shorthand"]
         SCRAMBLER = config["unitInformation"][5]["shorthand"]
 
-    def get_player_firewalls(game_state, player_index = 0):
+    def get_player_firewalls(self, game_state, player_index = 0):
         return []
 
-    def pred_enemy_states(game_state):
+    def pred_enemy_state(self, game_state):
         health=30
         # get list of firewalls of player passed in
-        listFirewalls=get_player_firewalls(game_state, 1)
+        listFirewalls=self.get_player_firewalls(game_state, 1)
         bits=game_state.get_resource(game_state.BITS, 1)
         cores=game_state.get_resource(game_state.CORES, 1)
         return [health, listFirewalls, bits, cores]
 
-    def get_player_state(game_state):
+    def get_player_state(self, game_state):
         health=30
         # get list of firewalls of player passed in
-        listFirewalls=get_player_firewalls(game_state)
+        listFirewalls=self.get_player_firewalls(game_state)
         bits=game_state.get_resource(game_state.BITS)
         cores=game_state.get_resource(game_state.CORES)
         return [health, listFirewalls, bits, cores]
@@ -71,8 +71,8 @@ class AlgoStrategy(gamelib.AlgoCore):
         game_state = gamelib.GameState(self.config, turn_state)
         gamelib.debug_write('Performing turn {} of your custom algo strategy'.format(game_state.turn_number))
         #game_state.suppress_warnings(True)  #Uncomment this line to suppress warnings.
-        player_state = get_player_state(game_state)
-        enemy_state = pred_enemy_state(game_state, 1)
+        player_state = self.get_player_state(game_state)
+        enemy_state = self.pred_enemy_state(game_state)
 
         self.starter_strategy(game_state)
 
