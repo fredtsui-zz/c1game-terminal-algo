@@ -40,17 +40,28 @@ class AlgoStrategy(gamelib.AlgoCore):
         EMP = config["unitInformation"][4]["shorthand"]
         SCRAMBLER = config["unitInformation"][5]["shorthand"]
 
-    def get_player_firewalls(self, game_state, player_index = 0):
+    # returns a list of firewall infos
+    # a firewall info contains {unit-type, x, y, possibility}
+    # possibility = the possibility we predict enemy will spawn
+    #               a specified unit type at specified x-y coordinate next turn
+    #               this will be useful when calculating scores
+    def predict_enemy_firewalls(self, game_state):
         return []
 
+    # returns a list of firewall infos (see above) with possibility = 1
+    def get_player_firewalls(self, game_state):
+        return []
+
+    # predict enemy state at the start of next turn, 
     def pred_enemy_state(self, game_state):
         health=30
         # get list of firewalls of player passed in
-        listFirewalls=self.get_player_firewalls(game_state, 1)
+        listFirewalls=self.predict_enemy_firewalls(game_state)
         bits=game_state.get_resource(game_state.BITS, 1)
         cores=game_state.get_resource(game_state.CORES, 1)
         return [health, listFirewalls, bits, cores]
-
+    
+    # get details of a player's stat (health, existing stationary units, resources)
     def get_player_state(self, game_state):
         health=30
         # get list of firewalls of player passed in
@@ -58,6 +69,27 @@ class AlgoStrategy(gamelib.AlgoCore):
         bits=game_state.get_resource(game_state.BITS)
         cores=game_state.get_resource(game_state.CORES)
         return [health, listFirewalls, bits, cores]
+
+    def generate_strategies(self, player_state, enemy_state):
+        # return value: list of {unit_type, x, y} : 
+        # each item in the list is instruction on where to deploy specific units
+        return []
+
+    # this function evaluates the effectiveness of a strategy
+    # based on current player state and expected enemy state
+    # returns a number
+    def evaluate(self, strat, player_state, enemy_state):
+        # general idea here: score = est_player_score - est_enemy_score
+        # est_player_score = k_1 * health + k_2 * (resources after executing strat) + 
+        #                    k_3 * (calculated firewall scores after strat)
+        # est_player_score = k_1 * health + k_2 * (enemy resources) + 
+        #                    k_3 * (calculated enemy firewall scores)
+        return 0
+
+    # strat: list of deploy instructions, 
+    # each instruction should contain {unit_type, x, y}
+    def execute_strat(self, strat):
+        pass
 
     def on_turn(self, turn_state):
         """
@@ -74,12 +106,25 @@ class AlgoStrategy(gamelib.AlgoCore):
         player_state = self.get_player_state(game_state)
         enemy_state = self.pred_enemy_state(game_state)
 
-        self.starter_strategy(game_state)
+        strats = self.generate_strategies(player_state, enemy_state)
+        if(len(strats) != 0):
+            best_strat = strats[0]
+            best_score = self.evaluate(best_strat, player_state, enemy_state)
+            for strat in strats[1:]:
+                score = self.evaluate(best_strat, player_state, enemy_state)
+                if(score > best_score):
+                    best_score = score
+                    best_strat = strat
 
+        self.execute_strat(strat)
         game_state.submit_turn()
 
+
+############################################################################################
+
     """
-    NOTE: All the methods after this point are part of the sample starter-algo
+    NOTE: Below are helper functions that might be useful later-on
+    All the methods after this point are part of the sample starter-algo
     strategy and can safey be replaced for your custom algo.
     """
     def starter_strategy(self, game_state):
