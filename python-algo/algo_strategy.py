@@ -116,7 +116,7 @@ class AlgoStrategy(gamelib.AlgoCore):
                     best_score = score
                     best_strat = strat
 
-        self.execute_strat(strat)
+        self.execute_strat(best_strat)
         game_state.submit_turn()
 
 
