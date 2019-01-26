@@ -107,6 +107,7 @@ class AlgoStrategy(gamelib.AlgoCore):
                             left.append(unit)
                         else:
                             right.append(unit)
+                            
         if (len(left) > len(right)):
             return "left"
         elif (len(right) > len(left)):
@@ -116,16 +117,13 @@ class AlgoStrategy(gamelib.AlgoCore):
     
     # for start_point and end_point we find total health/attack on the way
     def get_destructors_on_path(self, game_state, start_point, end_points):
-        path = gamelib.navigation.ShortestPathFinder.navigate_multiple_endpoints(start_point, end_points, game_state)
+        path = gamelib.ShortestPathFinder.navigate_multiple_endpoints(start_point, end_points, game_state)
         adv_game_state = gamelib.AdvancedGameState(game_state)
-        health = 0
-        damage = 0
+        retval = 0
         for location in path:
             attackers = adv_game_state.get_attackers(location, 0)
-            for tower in attackers:
-                health = health + tower.stability
-                damage = damage + tower.damage
-        return {'health': health, 'damage': damage}
+            retval = retval + len(attackers)
+        return retval
 
     # returns a list of enemy units of unit_type in the map
     def get_enemy_units(self, game_state, unit_type):
@@ -134,6 +132,7 @@ class AlgoStrategy(gamelib.AlgoCore):
         for x in range(game_state.ARENA_SIZE):
             for y in range(game_state.ARENA_SIZE):
                 units = game_state.ame_map[x, y]
+
                 for unit in units:
                     if(unit.player_index == 1 and unit.unit_type == unit_type):
                         retval.append(unit)
