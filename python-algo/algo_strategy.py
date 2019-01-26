@@ -99,8 +99,10 @@ class AlgoStrategy(gamelib.AlgoCore):
         right = []
         arena_size = game_state.ARENA_SIZE
         for x in range(arena_size):
-            for y in range(arena_size/2, arena_size):
+            for y in range(arena_size//2, arena_size):
                 units = game_state.game_map[x, y]
+                if not units:
+                    continue
                 for unit in units:
                     if(unit.player_index == 1 and unit.unit_type == ENCRYPTOR):
                         if(unit.x < arena_size/2):
@@ -169,10 +171,37 @@ class AlgoStrategy(gamelib.AlgoCore):
         #             best_strat = strat
 
         # self.execute_strat(best_strat)
-        self.starter_strategy(game_state)
+        self.starter_strategy(game_state, turn_state)
         game_state.submit_turn()
 
+    def offense(self, game_state, turn_state):
+        locations = [[5, 14], [3, 17], [4, 16]]
+        top_left_enemy_destructors = 0
+        advanced_game_state = AdvancedGameState(self.config, turn_state) 
+        for location in locations:
+            top_left_enemy_destructors = max(top_left_enemy_destructors, len(advanced_game_state.get_attackers(location, 1)))
+        top_left_enemy_units = self.get_enemy_left_units(game_state)
 
+        for _ in range(top_left_enemy_destructors//3 + top_left_enemy_units//6):
+            if game_state.can_spawn(EMP, [2, 11]):
+                game_state.attempt_spawn(EMP, [2, 11])
+
+        while game_state.can_spawn(PING, [16, 2], 1):
+            game_state.attempt_spawn(PING, [16,2], 1)
+    
+    def get_enemy_left_units(self, game_state):
+        current_map = game_state.game_map
+        count = 0
+        for x in range(4, 9):
+            for y in range(14, 19):
+                units = current_map[x, y]
+                if not units:
+                    continue
+                for unit in units:
+                    if unit and unit.unit_type != DESTRUCTOR:
+                        count += 1
+        return count 
+    
 ############################################################################################
 
     """
@@ -180,7 +209,7 @@ class AlgoStrategy(gamelib.AlgoCore):
     All the methods after this point are part of the sample starter-algo
     strategy and can safey be replaced for your custom algo.
     """
-    def starter_strategy(self, game_state):
+    def starter_strategy(self, game_state, turn_state):
         """
         Build the C1 logo. Calling this method first prioritises
         resources to build and repair the logo before spending them 
@@ -196,7 +225,7 @@ class AlgoStrategy(gamelib.AlgoCore):
         """
         Finally deploy our information units to attack.
         """
-        self.attack(game_state)
+        self.offense(game_state, turn_state)
 
     # Here we make the C1 Logo!
     def build_c1_logo(self, game_state):
@@ -287,9 +316,10 @@ class AlgoStrategy(gamelib.AlgoCore):
         """
         Decide where to put additional destructors
         """
-        if (self.findEnc(game_state) == 'left'):
+        possible_locations = []
+        if self.findEnc(game_state) == 'left':
             possible_locations = [[23, 12], [20, 12]]
-        elif (self.findEnc(game_state) == 'right'):
+        elif self.findEnc(game_state) == 'right':
             possible_locations = [[4, 12], [7, 12]]
 
         """
@@ -304,17 +334,6 @@ class AlgoStrategy(gamelib.AlgoCore):
         for location in encryptor_locations:
             if game_state.get_resource(game_state.CORES) >= 15:
                 game_state.attempt_spawn(ENCRYPTOR, location)
-
-    def attack(self, game_state):
-        top_left_enemy_destructors = self.get_destructors_on_path(game_state, [16, 2], [3, 17])
-        top_left_enemy_units = self.get_enemy_units(game_state, ENCRYPTOR) + self.get_enemy_units(location, FILTER)
-
-        for _ in range(top_left_enemy_destructors + top_left_enemy_units//4):
-            if game_state.can_spawn(EMP, [2, 11]):
-                game_state.attempt_spawn(EMP, [2, 11])
-
-        while game_state.can_spawn(PING, [16, 2], 1):
-            game_state.attempt_spawn(PING, [16,2], 1)
 
     def deploy_attackers(self, game_state):
         """
