@@ -91,6 +91,9 @@ class AlgoStrategy(gamelib.AlgoCore):
     def execute_strat(self, strat):
         pass
 
+    def findEnc(self):
+        return "left"
+
     def on_turn(self, turn_state):
         """
         This function is called every turn with the game state wrapper as
@@ -177,10 +180,33 @@ class AlgoStrategy(gamelib.AlgoCore):
         """
         First lets protect ourselves a little with destructors:
         """
-        firewall_locations = [[0, 13], [27, 13]]
-        for location in firewall_locations:
+        destructor_locations = [[3, 12], [6, 12], [11, 12], [16, 12], [21, 12], [24, 12]]
+        # Will eliminate all the coordinates that is already placed
+        destructor_locations = self.filter_blocked_locations(destructor_locations, game_state)
+        for location in destructor_locations:
             if game_state.can_spawn(DESTRUCTOR, location):
                 game_state.attempt_spawn(DESTRUCTOR, location)
+
+        """
+        Then build filters at the top of the arena that
+        destructors do not cover
+        """
+        filter_locations = [[3, 13], [6, 13], [11, 13], [16, 13], [21, 13], [24, 13]]
+        filter_locations = self.filter_blocked_locations(filter_locations, game_state)
+        for location in filter_locations:
+            if game_state.can_spawn(FILTER, location):
+                game_state.attempt_spawn(FILTER, location)
+
+        # Depending on where the enemy encryptor is, create 3 more walls.
+        if (self.findEnc() == 'left'):
+            filter_locations = [[0, 13], [1, 13], [2, 13]]
+        elif (self.findEnc() == 'right'):
+            filter_locations = [[25, 13], [26, 13], [27, 13]]
+        else:
+            filter_locations = []
+        for location in filter_locations:
+            if game_state.can_spawn(FILTER, location):
+                game_state.attempt_spawn(FILTER, location)
 
         """
         Then lets boost our offense by building some encryptors to shield 
@@ -188,10 +214,11 @@ class AlgoStrategy(gamelib.AlgoCore):
         shields decay over time, so shields closer to the action 
         are more effective.
         """
-        firewall_locations = [[3, 11], [4, 11], [5, 11]]
-        for location in firewall_locations:
-            if game_state.can_spawn(ENCRYPTOR, location):
-                game_state.attempt_spawn(ENCRYPTOR, location)
+        # For now, do not worry about encryptors
+        # encryptor_locations = [[19, 10], [7, 10]]
+        # for location in encryptor_locations:
+        #     if game_state.can_spawn(ENCRYPTOR, location):
+        #         game_state.attempt_spawn(ENCRYPTOR, location)
 
         """
         Lastly lets build encryptors in random locations. Normally building 
