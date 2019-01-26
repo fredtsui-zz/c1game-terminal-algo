@@ -228,30 +228,33 @@ class AlgoStrategy(gamelib.AlgoCore):
         First we get all locations on the bottom half of the map
         that are in the arena bounds.
         """
-        all_locations = []
-        for i in range(game_state.ARENA_SIZE):
-            for j in range(math.floor(game_state.ARENA_SIZE / 2)):
-                if (game_state.game_map.in_arena_bounds([i, j])):
-                    all_locations.append([i, j])
+        # all_locations = []
+        # for i in range(game_state.ARENA_SIZE):
+        #     for j in range(math.floor(game_state.ARENA_SIZE / 2)):
+        #         if (game_state.game_map.in_arena_bounds([i, j])):
+        #             all_locations.append([i, j])
         
         """
-        Then we remove locations already occupied.
+        Decide where to put additional destructors
         """
-        possible_locations = self.filter_blocked_locations(all_locations, game_state)
+        if (self.findEnc() == 'left'):
+            possible_locations = [[23, 12], [20, 12]]
+        elif (self.findEnc() == 'right'):
+            possible_locations = [[4, 12], [7, 12]]
 
         """
-        While we have cores to spend, build a random Encryptor.
+        While we have cores to spend, build additional destructor.
         """
-        while game_state.get_resource(game_state.CORES) >= game_state.type_cost(ENCRYPTOR) and len(possible_locations) > 0:
-            # Choose a random location.
-            location_index = random.randint(0, len(possible_locations) - 1)
-            build_location = possible_locations[location_index]
-            """
-            Build it and remove the location since you can't place two 
-            firewalls in the same location.
-            """
-            game_state.attempt_spawn(ENCRYPTOR, build_location)
-            possible_locations.remove(build_location)
+        for location in possible_locations:
+            if game_state.get_resource(game_state.CORES) >= 15:
+                game_state.attempt_spawn(DESTRUCTOR, location)
+
+        # If we have enough cores, build encryptors
+        encryptor_locations = [[5, 11], [6, 11], [7, 11]]
+        for location in encryptor_locations:
+            if game_state.get_resource(game_state.CORES) >= 15:
+                game_state.attempt_spawn(ENCRYPTOR, location)
+
 
     def deploy_attackers(self, game_state):
         """
