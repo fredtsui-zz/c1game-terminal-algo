@@ -1,4 +1,6 @@
 import gamelib
+from gamelib import AdvancedGameState
+from gamelib import navigation
 import random
 import math
 import warnings
@@ -46,6 +48,7 @@ class AlgoStrategy(gamelib.AlgoCore):
     #               a specified unit type at specified x-y coordinate next turn
     #               this will be useful when calculating scores
     def predict_enemy_firewalls(self, game_state):
+
         return []
 
     # returns a list of firewall infos (see above) with possibility = 1
@@ -54,19 +57,19 @@ class AlgoStrategy(gamelib.AlgoCore):
 
     # predict enemy state at the start of next turn, 
     def pred_enemy_state(self, game_state):
-        health=30
+        health=game_state.enemy_health
         # get list of firewalls of player passed in
         listFirewalls=self.predict_enemy_firewalls(game_state)
-        bits=game_state.get_resource(game_state.BITS, 1)
+        bits=game_state.project_future_bits(1, 1)
         cores=game_state.get_resource(game_state.CORES, 1)
         return [health, listFirewalls, bits, cores]
     
     # get details of a player's stat (health, existing stationary units, resources)
     def get_player_state(self, game_state):
-        health=30
+        health=game_state.my_health
         # get list of firewalls of player passed in
         listFirewalls=self.get_player_firewalls(game_state)
-        bits=game_state.get_resource(game_state.BITS)
+        bits=game_state.project_future_bits(1, 0)
         cores=game_state.get_resource(game_state.CORES)
         return [health, listFirewalls, bits, cores]
 
@@ -91,8 +94,53 @@ class AlgoStrategy(gamelib.AlgoCore):
     def execute_strat(self, strat):
         pass
 
-    def findEnc(self):
-        return "left"
+    def findEnc(self, game_state):
+        left = []
+        right = []
+        arena_size = game_state.ARENA_SIZE
+        for x in range(arena_size):
+            for y in range(arena_size/2, arena_size):
+                units = game_state.game_map[x, y]
+                for unit in units:
+                    if(unit.player_index == 1 and unit.unit_type == ENCRYPTOR):
+                        if(unit.x < arena_size/2):
+                            left.append(unit)
+                        else:
+                            right.append(unit)
+        if (len(left) > len(right)):
+            return "left"
+        elif (len(right) > len(left)):
+            return "right"
+        else:
+            return "none"
+    
+    # for start_point and end_point we find total health/attack on the way
+    def get_destructors_on_path(self, game_state, start_point, end_points):
+        path = gamelib.navigation.ShortestPathFinder.navigate_multiple_endpoints(start_point, end_points, game_state)
+        adv_game_state = gamelib.AdvancedGameState(game_state)
+        health = 0
+        damage = 0
+        for location in path:
+            attackers = adv_game_state.get_attackers(location, 0)
+            for tower in attackers:
+                health = health + tower.stability
+                damage = damage + tower.damage
+        return {'health': health, 'damage': damage}
+
+    # returns a list of enemy units of unit_type in the map
+    def get_enemy_units(self, game_state, unit_type):
+        current_map = game_state.game_map
+        retval = []
+        for x in range(game_state.ARENA_SIZE):
+            for y in range(game_state.ARENA_SIZE):
+                units = game_state.ame_map[x, y]
+                for unit in units:
+                    if(unit.player_index == 1 and unit.unit_type == unit_type):
+                        retval.append(unit)
+
+        return retval
+
+      
 
     def on_turn(self, turn_state):
         """
@@ -198,9 +246,9 @@ class AlgoStrategy(gamelib.AlgoCore):
                 game_state.attempt_spawn(FILTER, location)
 
         # Depending on where the enemy encryptor is, create 3 more walls.
-        if (self.findEnc() == 'left'):
+        if (self.findEnc(game_state) == 'left'):
             filter_locations = [[0, 13], [1, 13], [2, 13]]
-        elif (self.findEnc() == 'right'):
+        elif (self.findEnc(game_state) == 'right'):
             filter_locations = [[25, 13], [26, 13], [27, 13]]
         else:
             filter_locations = []
@@ -237,9 +285,9 @@ class AlgoStrategy(gamelib.AlgoCore):
         """
         Decide where to put additional destructors
         """
-        if (self.findEnc() == 'left'):
+        if (self.findEnc(game_state) == 'left'):
             possible_locations = [[23, 12], [20, 12]]
-        elif (self.findEnc() == 'right'):
+        elif (self.findEnc(game_state) == 'right'):
             possible_locations = [[4, 12], [7, 12]]
 
         """
