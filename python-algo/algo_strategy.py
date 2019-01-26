@@ -154,20 +154,21 @@ class AlgoStrategy(gamelib.AlgoCore):
         game_state = gamelib.GameState(self.config, turn_state)
         gamelib.debug_write('Performing turn {} of your custom algo strategy'.format(game_state.turn_number))
         #game_state.suppress_warnings(True)  #Uncomment this line to suppress warnings.
-        player_state = self.get_player_state(game_state)
-        enemy_state = self.pred_enemy_state(game_state)
+        # player_state = self.get_player_state(game_state)
+        # enemy_state = self.pred_enemy_state(game_state)
 
-        strats = self.generate_strategies(player_state, enemy_state)
-        if(len(strats) != 0):
-            best_strat = strats[0]
-            best_score = self.evaluate(best_strat, player_state, enemy_state)
-            for strat in strats[1:]:
-                score = self.evaluate(best_strat, player_state, enemy_state)
-                if(score > best_score):
-                    best_score = score
-                    best_strat = strat
+        # strats = self.generate_strategies(player_state, enemy_state)
+        # if(len(strats) != 0):
+        #     best_strat = strats[0]
+        #     best_score = self.evaluate(best_strat, player_state, enemy_state)
+        #     for strat in strats[1:]:
+        #         score = self.evaluate(best_strat, player_state, enemy_state)
+        #         if(score > best_score):
+        #             best_score = score
+        #             best_strat = strat
 
-        self.execute_strat(best_strat)
+        # self.execute_strat(best_strat)
+        self.starter_strategy(game_state)
         game_state.submit_turn()
 
 
@@ -184,7 +185,7 @@ class AlgoStrategy(gamelib.AlgoCore):
         resources to build and repair the logo before spending them 
         on anything else.
         """
-        self.build_c1_logo(game_state)
+        #self.build_c1_logo(game_state)
 
         """
         Then build additional defenses.
@@ -194,7 +195,7 @@ class AlgoStrategy(gamelib.AlgoCore):
         """
         Finally deploy our information units to attack.
         """
-        self.deploy_attackers(game_state)
+        self.attack(game_state)
 
     # Here we make the C1 Logo!
     def build_c1_logo(self, game_state):
@@ -303,6 +304,16 @@ class AlgoStrategy(gamelib.AlgoCore):
             if game_state.get_resource(game_state.CORES) >= 15:
                 game_state.attempt_spawn(ENCRYPTOR, location)
 
+    def attack(self, game_state):
+        top_left_enemy_destructors = self.get_destructors_on_path(game_state, [16, 2], [3, 17])
+        top_left_enemy_units = self.get_enemy_units(game_state, ENCRYPTOR) + self.get_enemy_units(location, FILTER)
+
+        for _ in range(top_left_enemy_destructors + top_left_enemy_units//4):
+            if game_state.can_spawn(EMP, [2, 11]):
+                game_state.attempt_spawn(EMP, [2, 11])
+
+        while game_state.can_spawn(PING, [16, 2], 1):
+            game_state.attempt_spawn(PING, [16,2], 1)
 
     def deploy_attackers(self, game_state):
         """
