@@ -92,12 +92,27 @@ class AlgoStrategy(gamelib.AlgoCore):
     def execute_strat(self, strat):
         pass
 
-   
-    def findEnc(self):
-        return "left"
+    def findEnc(self, game_state):
+        left = []
+        right = []
+        arena_size = game_state.ARENA_SIZE
+        for x in range(arena_size):
+            for y in range(arena_size/2, arena_size):
+                units = game_map[x, y]
+                for unit in units:
+                    if(unit.player_index == 1 and unit.unit_type == ENCRYPTOR):
+                        if(unit.x < arena_size/2):
+                            left.append(unit)
+                        else:
+                            right.append(unit)
+        if(len(left) > len(right)):
+            return "left"
+        else:
+            return "right"
     
-    def get_destructors_on_path(self, game_state, start_point):
-        path = gamelib.ShortestPathFinder.navigate_multiple_endpoints(start_point, game_state)
+    # for start_point and end_point we find total health/attack on the way
+    def get_destructors_on_path(self, game_state, start_point, end_points):
+        path = gamelib.ShortestPathFinder.navigate_multiple_endpoints(start_point, end_points, game_state)
         adv_game_state = gamelib.AdvancedGameState(game_state)
         health = 0
         damage = 0
@@ -108,14 +123,15 @@ class AlgoStrategy(gamelib.AlgoCore):
                 damage = damage + tower.damage
         return {'health': health, 'damage': damage}
 
-    def get_enemy_encryptors(self, game_state):
+    # returns a list of enemy units of unit_type in the map
+    def get_enemy_units(self, game_state, unit_type):
         current_map = game_state.game_map
         retval = []
-        for x in range(self.game_state.ARENA_SIZE):
-            for y in range(self.game_state.ARENA_SIZE):
+        for x in range(game_state.ARENA_SIZE):
+            for y in range(game_state.ARENA_SIZE):
                 units = game_map[x, y]
                 for unit in units:
-                    if(unit.unit_type == ENCRYPTOR):
+                    if(unit.player_index == 1 and unit.unit_type == unit_type):
                         retval.append(unit)
 
         return retval
