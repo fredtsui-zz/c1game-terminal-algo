@@ -173,17 +173,28 @@ class AlgoStrategy(gamelib.AlgoCore):
         game_state.submit_turn()
 
     def offense(self, game_strat):
-        enemy_top_left_locations = [[4, 14], [4, 15], [4, 16], [5, 14], [5, 16], [6, 14], [6, 15], [6, 16]]
-        max_destructors = 0
-        for location in enemy_top_left_locations:
-            max_destructors = get_attackers(location, 1)
-        for destructor in max_destructors:
+        locations = [[5, 14], [3, 17], [4, 16]]
+        top_left_enemy_destructors = 0
+        for location in locations
+            top_left_enemy_destructors = max(top_left_enemy_destructors, self.get_attackers(location, 1))
+        top_left_enemy_units = self.get_enemy_left_units(game_state)
+
+        for _ in range(top_left_enemy_destructors//3 + top_left_enemy_units//6):
             if game_state.can_spawn(EMP, [2, 11]):
                 game_state.attempt_spawn(EMP, [2, 11])
 
         while game_state.can_spawn(PING, [16, 2], 1):
             game_state.attempt_spawn(PING, [16,2], 1)
-
+    
+    def get_enemy_left_units(self, game_state):
+        count = 0
+        for x in range(4, 9):
+            for y in range(14, 19):
+                unit = current_map[x, y]
+                if unit.unit_type != DESTRUCTOR:
+                    count += 1
+        return count 
+    
 ############################################################################################
 
     """
