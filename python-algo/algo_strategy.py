@@ -92,6 +92,10 @@ class AlgoStrategy(gamelib.AlgoCore):
     def execute_strat(self, strat):
         pass
 
+   
+    def findEnc(self):
+        return "left"
+    
     def get_destructors_on_path(self, game_state, start_point):
         path = gamelib.ShortestPathFinder.navigate_multiple_endpoints(start_point, game_state)
         adv_game_state = gamelib.AdvancedGameState(game_state)
@@ -116,6 +120,7 @@ class AlgoStrategy(gamelib.AlgoCore):
 
         return retval
 
+      
 
     def on_turn(self, turn_state):
         """
@@ -203,10 +208,33 @@ class AlgoStrategy(gamelib.AlgoCore):
         """
         First lets protect ourselves a little with destructors:
         """
-        firewall_locations = [[0, 13], [27, 13]]
-        for location in firewall_locations:
+        destructor_locations = [[3, 12], [6, 12], [11, 12], [16, 12], [21, 12], [24, 12]]
+        # Will eliminate all the coordinates that is already placed
+        destructor_locations = self.filter_blocked_locations(destructor_locations, game_state)
+        for location in destructor_locations:
             if game_state.can_spawn(DESTRUCTOR, location):
                 game_state.attempt_spawn(DESTRUCTOR, location)
+
+        """
+        Then build filters at the top of the arena that
+        destructors do not cover
+        """
+        filter_locations = [[3, 13], [6, 13], [11, 13], [16, 13], [21, 13], [24, 13]]
+        filter_locations = self.filter_blocked_locations(filter_locations, game_state)
+        for location in filter_locations:
+            if game_state.can_spawn(FILTER, location):
+                game_state.attempt_spawn(FILTER, location)
+
+        # Depending on where the enemy encryptor is, create 3 more walls.
+        if (self.findEnc() == 'left'):
+            filter_locations = [[0, 13], [1, 13], [2, 13]]
+        elif (self.findEnc() == 'right'):
+            filter_locations = [[25, 13], [26, 13], [27, 13]]
+        else:
+            filter_locations = []
+        for location in filter_locations:
+            if game_state.can_spawn(FILTER, location):
+                game_state.attempt_spawn(FILTER, location)
 
         """
         Then lets boost our offense by building some encryptors to shield 
@@ -214,10 +242,11 @@ class AlgoStrategy(gamelib.AlgoCore):
         shields decay over time, so shields closer to the action 
         are more effective.
         """
-        firewall_locations = [[3, 11], [4, 11], [5, 11]]
-        for location in firewall_locations:
-            if game_state.can_spawn(ENCRYPTOR, location):
-                game_state.attempt_spawn(ENCRYPTOR, location)
+        # For now, do not worry about encryptors
+        # encryptor_locations = [[19, 10], [7, 10]]
+        # for location in encryptor_locations:
+        #     if game_state.can_spawn(ENCRYPTOR, location):
+        #         game_state.attempt_spawn(ENCRYPTOR, location)
 
         """
         Lastly lets build encryptors in random locations. Normally building 
@@ -227,30 +256,33 @@ class AlgoStrategy(gamelib.AlgoCore):
         First we get all locations on the bottom half of the map
         that are in the arena bounds.
         """
-        all_locations = []
-        for i in range(game_state.ARENA_SIZE):
-            for j in range(math.floor(game_state.ARENA_SIZE / 2)):
-                if (game_state.game_map.in_arena_bounds([i, j])):
-                    all_locations.append([i, j])
+        # all_locations = []
+        # for i in range(game_state.ARENA_SIZE):
+        #     for j in range(math.floor(game_state.ARENA_SIZE / 2)):
+        #         if (game_state.game_map.in_arena_bounds([i, j])):
+        #             all_locations.append([i, j])
         
         """
-        Then we remove locations already occupied.
+        Decide where to put additional destructors
         """
-        possible_locations = self.filter_blocked_locations(all_locations, game_state)
+        if (self.findEnc() == 'left'):
+            possible_locations = [[23, 12], [20, 12]]
+        elif (self.findEnc() == 'right'):
+            possible_locations = [[4, 12], [7, 12]]
 
         """
-        While we have cores to spend, build a random Encryptor.
+        While we have cores to spend, build additional destructor.
         """
-        while game_state.get_resource(game_state.CORES) >= game_state.type_cost(ENCRYPTOR) and len(possible_locations) > 0:
-            # Choose a random location.
-            location_index = random.randint(0, len(possible_locations) - 1)
-            build_location = possible_locations[location_index]
-            """
-            Build it and remove the location since you can't place two 
-            firewalls in the same location.
-            """
-            game_state.attempt_spawn(ENCRYPTOR, build_location)
-            possible_locations.remove(build_location)
+        for location in possible_locations:
+            if game_state.get_resource(game_state.CORES) >= 15:
+                game_state.attempt_spawn(DESTRUCTOR, location)
+
+        # If we have enough cores, build encryptors
+        encryptor_locations = [[5, 11], [6, 11], [7, 11]]
+        for location in encryptor_locations:
+            if game_state.get_resource(game_state.CORES) >= 15:
+                game_state.attempt_spawn(ENCRYPTOR, location)
+
 
     def deploy_attackers(self, game_state):
         """
