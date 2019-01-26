@@ -114,14 +114,11 @@ class AlgoStrategy(gamelib.AlgoCore):
     def get_destructors_on_path(self, game_state, start_point, end_points):
         path = gamelib.ShortestPathFinder.navigate_multiple_endpoints(start_point, end_points, game_state)
         adv_game_state = gamelib.AdvancedGameState(game_state)
-        health = 0
-        damage = 0
+        retval = 0
         for location in path:
             attackers = adv_game_state.get_attackers(location, 0)
-            for tower in attackers:
-                health = health + tower.stability
-                damage = damage + tower.damage
-        return {'health': health, 'damage': damage}
+            retval = retval + len(attackers)
+        return retval
 
     # returns a list of enemy units of unit_type in the map
     def get_enemy_units(self, game_state, unit_type):
